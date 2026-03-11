@@ -21,6 +21,7 @@ addressbook
 addressbook.exe
 tests/tst_*
 !tests/tst_*.cpp
+!tests/tst_*.pro
 
 # Database
 *.db
