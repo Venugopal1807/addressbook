@@ -1,0 +1,49 @@
+# Build artifacts
+build/
+*.o
+*.obj
+moc_*
+ui_*
+qrc_*
+
+# Generated Makefiles (not the root Makefile)
+src/Makefile
+src/Makefile.*
+tests/Makefile
+tests/Makefile.*
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+
+# Binaries
+addressbook
+addressbook.exe
+tests/tst_*
+!tests/tst_*.cpp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
