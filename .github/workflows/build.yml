@@ -1,0 +1,63 @@
+# Addressbook CI/CD Pipeline
+# Builds and tests the Qt/C++ application on Debian-based Ubuntu.
+
+name: Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build & Test on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 and build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qt6-base-dev \
+            qt6-base-dev-tools \
+            libqt6sql6-sqlite \
+            qmake6 \
+            g++ \
+            make
+
+      - name: Build application
+        run: |
+          cd src
+          qmake6 src.pro
+          make -j$(nproc)
+
+      - name: Build tests
+        run: |
+          cd tests
+          qmake6 tests.pro
+          make -j$(nproc)
+
+      - name: Run unit tests
+        run: |
+          cd build/tests
+          ./tst_contact
+          ./tst_fieldvalidator
+          ./tst_databasemanager
+
+      - name: Setup Python for schema management
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install -r schema/requirements.txt
+
+      - name: Verify schema migration
+        run: |
+          cd schema
+          python manage_schema.py init
+          python manage_schema.py current
