@@ -1,6 +1,6 @@
 # Addressbook
 
-[![Build & Test](https://github.com/YOUR_USERNAME/addressbook/actions/workflows/build.yml/badge.svg)](https://github.com/YOUR_USERNAME/addressbook/actions/workflows/build.yml)
+[![Build & Test](https://github.com/Venugopal1807/addressbook/actions/workflows/build.yml/badge.svg)](https://github.com/Venugopal1807/addressbook/actions/workflows/build.yml)
 
 A modern, production-grade contact management application built with **Qt6/C++** and **SQLite**, featuring real-time field validation, search & filtering, and database schema management via **SQLAlchemy + Alembic**.
 
@@ -72,7 +72,7 @@ python3 -m pip install -r schema/requirements.txt
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/addressbook.git
+git clone https://github.com/Venugopal1807/addressbook.git
 cd addressbook
 
 # Build the application
