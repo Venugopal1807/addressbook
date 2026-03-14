@@ -1,8 +1,3 @@
-/**
- * @file contactdialog.cpp
- * @brief Implementation of the Add/Edit contact dialog.
- */
-
 #include "contactdialog.h"
 #include "../validators/fieldvalidator.h"
 
@@ -13,17 +8,16 @@
 #include <QCalendarWidget>
 
 ContactDialog::ContactDialog(QWidget *parent)
-    : QDialog(parent)
-    , m_contactId(-1)
+    : QDialog(parent), m_contactId(-1)
 {
     setupUi();
     connectSignals();
-    validateFields();  // Initial validation state
+    validateFields();
 }
 
 void ContactDialog::setupUi()
 {
-    setWindowTitle(QStringLiteral("Contact"));
+    setWindowTitle("Contact");
     setMinimumWidth(450);
     setModal(true);
 
@@ -31,105 +25,94 @@ void ContactDialog::setupUi()
     mainLayout->setSpacing(16);
     mainLayout->setContentsMargins(24, 24, 24, 24);
 
-    // --- Form group ---
-    auto *formGroup = new QGroupBox(QStringLiteral("Contact Details"));
-    auto *formLayout = new QFormLayout(formGroup);
-    formLayout->setSpacing(8);
-    formLayout->setContentsMargins(16, 20, 16, 16);
+    // group box for the form fields
+    auto *formGroup = new QGroupBox("Contact Details");
+    auto *form = new QFormLayout(formGroup);
+    form->setSpacing(8);
+    form->setContentsMargins(16, 20, 16, 16);
 
-    // Name field
+    // Name
     m_nameEdit = new QLineEdit(this);
-    m_nameEdit->setPlaceholderText(QStringLiteral("e.g. John Doe"));
+    m_nameEdit->setPlaceholderText("e.g. John Doe");
     m_nameEdit->setMaxLength(100);
     m_nameError = new QLabel(this);
-    m_nameError->setObjectName(QStringLiteral("errorLabel"));
-    auto *nameLayout = new QVBoxLayout();
-    nameLayout->setSpacing(2);
-    nameLayout->addWidget(m_nameEdit);
-    nameLayout->addWidget(m_nameError);
-    formLayout->addRow(QStringLiteral("Name *"), nameLayout);
+    m_nameError->setObjectName("errorLabel");
+    auto *nameBox = new QVBoxLayout();
+    nameBox->setSpacing(2);
+    nameBox->addWidget(m_nameEdit);
+    nameBox->addWidget(m_nameError);
+    form->addRow("Name *", nameBox);
 
-    // Mobile field
+    // Mobile
     m_mobileEdit = new QLineEdit(this);
-    m_mobileEdit->setPlaceholderText(QStringLiteral("e.g. +91 98765 43210"));
+    m_mobileEdit->setPlaceholderText("e.g. +91 98765 43210");
     m_mobileEdit->setMaxLength(20);
     m_mobileError = new QLabel(this);
-    m_mobileError->setObjectName(QStringLiteral("errorLabel"));
-    auto *mobileLayout = new QVBoxLayout();
-    mobileLayout->setSpacing(2);
-    mobileLayout->addWidget(m_mobileEdit);
-    mobileLayout->addWidget(m_mobileError);
-    formLayout->addRow(QStringLiteral("Mobile *"), mobileLayout);
+    m_mobileError->setObjectName("errorLabel");
+    auto *mobileBox = new QVBoxLayout();
+    mobileBox->setSpacing(2);
+    mobileBox->addWidget(m_mobileEdit);
+    mobileBox->addWidget(m_mobileError);
+    form->addRow("Mobile *", mobileBox);
 
-    // Email field
+    // Email
     m_emailEdit = new QLineEdit(this);
-    m_emailEdit->setPlaceholderText(QStringLiteral("e.g. john@example.com"));
+    m_emailEdit->setPlaceholderText("e.g. john@example.com");
     m_emailEdit->setMaxLength(254);
     m_emailError = new QLabel(this);
-    m_emailError->setObjectName(QStringLiteral("errorLabel"));
-    auto *emailLayout = new QVBoxLayout();
-    emailLayout->setSpacing(2);
-    emailLayout->addWidget(m_emailEdit);
-    emailLayout->addWidget(m_emailError);
-    formLayout->addRow(QStringLiteral("Email *"), emailLayout);
+    m_emailError->setObjectName("errorLabel");
+    auto *emailBox = new QVBoxLayout();
+    emailBox->setSpacing(2);
+    emailBox->addWidget(m_emailEdit);
+    emailBox->addWidget(m_emailError);
+    form->addRow("Email *", emailBox);
 
-    // Birthday field
+    // Birthday
     m_birthdayEdit = new QDateEdit(this);
-    m_birthdayEdit->setDisplayFormat(QStringLiteral("dd MMM yyyy"));
+    m_birthdayEdit->setDisplayFormat("dd MMM yyyy");
     m_birthdayEdit->setCalendarPopup(true);
     m_birthdayEdit->setDate(QDate(2000, 1, 1));
     m_birthdayEdit->setMaximumDate(QDate::currentDate());
     m_birthdayEdit->setMinimumDate(QDate(1900, 1, 1));
-
-    // Style the calendar popup
-    QCalendarWidget *calendar = m_birthdayEdit->calendarWidget();
-    if (calendar) {
-        calendar->setGridVisible(true);
-        calendar->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
+    if (auto *cal = m_birthdayEdit->calendarWidget()) {
+        cal->setGridVisible(true);
+        cal->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
     }
-
     m_birthdayError = new QLabel(this);
-    m_birthdayError->setObjectName(QStringLiteral("errorLabel"));
-    auto *birthdayLayout = new QVBoxLayout();
-    birthdayLayout->setSpacing(2);
-    birthdayLayout->addWidget(m_birthdayEdit);
-    birthdayLayout->addWidget(m_birthdayError);
-    formLayout->addRow(QStringLiteral("Birthday *"), birthdayLayout);
+    m_birthdayError->setObjectName("errorLabel");
+    auto *bdayBox = new QVBoxLayout();
+    bdayBox->setSpacing(2);
+    bdayBox->addWidget(m_birthdayEdit);
+    bdayBox->addWidget(m_birthdayError);
+    form->addRow("Birthday *", bdayBox);
 
     mainLayout->addWidget(formGroup);
 
-    // --- Button row ---
-    auto *buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
-    buttonLayout->addStretch();
+    // buttons
+    auto *btnLayout = new QHBoxLayout();
+    btnLayout->setSpacing(12);
+    btnLayout->addStretch();
 
-    m_cancelButton = new QPushButton(QStringLiteral("Cancel"), this);
-    m_cancelButton->setObjectName(QStringLiteral("cancelButton"));
-    buttonLayout->addWidget(m_cancelButton);
+    m_cancelButton = new QPushButton("Cancel", this);
+    m_cancelButton->setObjectName("cancelButton");
+    btnLayout->addWidget(m_cancelButton);
 
-    m_okButton = new QPushButton(QStringLiteral("Save"), this);
-    m_okButton->setObjectName(QStringLiteral("saveButton"));
+    m_okButton = new QPushButton("Save", this);
+    m_okButton->setObjectName("saveButton");
     m_okButton->setDefault(true);
-    buttonLayout->addWidget(m_okButton);
+    btnLayout->addWidget(m_okButton);
 
-    mainLayout->addLayout(buttonLayout);
+    mainLayout->addLayout(btnLayout);
 }
 
 void ContactDialog::connectSignals()
 {
-    connect(m_nameEdit, &QLineEdit::textChanged,
-            this, &ContactDialog::validateFields);
-    connect(m_mobileEdit, &QLineEdit::textChanged,
-            this, &ContactDialog::validateFields);
-    connect(m_emailEdit, &QLineEdit::textChanged,
-            this, &ContactDialog::validateFields);
-    connect(m_birthdayEdit, &QDateEdit::dateChanged,
-            this, &ContactDialog::validateFields);
-
-    connect(m_okButton, &QPushButton::clicked,
-            this, &QDialog::accept);
-    connect(m_cancelButton, &QPushButton::clicked,
-            this, &QDialog::reject);
+    connect(m_nameEdit, &QLineEdit::textChanged, this, &ContactDialog::validateFields);
+    connect(m_mobileEdit, &QLineEdit::textChanged, this, &ContactDialog::validateFields);
+    connect(m_emailEdit, &QLineEdit::textChanged, this, &ContactDialog::validateFields);
+    connect(m_birthdayEdit, &QDateEdit::dateChanged, this, &ContactDialog::validateFields);
+    connect(m_okButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 void ContactDialog::setContact(const Contact &contact)
@@ -139,53 +122,42 @@ void ContactDialog::setContact(const Contact &contact)
     m_mobileEdit->setText(contact.mobile());
     m_emailEdit->setText(contact.email());
     m_birthdayEdit->setDate(contact.birthday());
-    setWindowTitle(QStringLiteral("Edit Contact"));
+    setWindowTitle("Edit Contact");
 }
 
 Contact ContactDialog::getContact() const
 {
-    return Contact(
-        m_contactId,
-        m_nameEdit->text().trimmed(),
-        m_mobileEdit->text().trimmed(),
-        m_emailEdit->text().trimmed(),
-        m_birthdayEdit->date());
+    return Contact(m_contactId,
+                   m_nameEdit->text().trimmed(),
+                   m_mobileEdit->text().trimmed(),
+                   m_emailEdit->text().trimmed(),
+                   m_birthdayEdit->date());
 }
 
 void ContactDialog::validateFields()
 {
-    auto nameResult   = FieldValidator::validateName(m_nameEdit->text());
-    auto mobileResult = FieldValidator::validateMobile(m_mobileEdit->text());
-    auto emailResult  = FieldValidator::validateEmail(m_emailEdit->text());
-    auto bdayResult   = FieldValidator::validateBirthday(m_birthdayEdit->date());
+    auto nr = FieldValidator::validateName(m_nameEdit->text());
+    auto mr = FieldValidator::validateMobile(m_mobileEdit->text());
+    auto er = FieldValidator::validateEmail(m_emailEdit->text());
+    auto br = FieldValidator::validateBirthday(m_birthdayEdit->date());
 
-    setFieldValidation(m_nameEdit,   m_nameError,
-                       nameResult.isValid, nameResult.errorMessage);
-    setFieldValidation(m_mobileEdit, m_mobileError,
-                       mobileResult.isValid, mobileResult.errorMessage);
-    setFieldValidation(m_emailEdit,  m_emailError,
-                       emailResult.isValid, emailResult.errorMessage);
-    setFieldValidation(m_birthdayEdit, m_birthdayError,
-                       bdayResult.isValid, bdayResult.errorMessage);
+    setFieldValidation(m_nameEdit, m_nameError, nr.isValid, nr.errorMessage);
+    setFieldValidation(m_mobileEdit, m_mobileError, mr.isValid, mr.errorMessage);
+    setFieldValidation(m_emailEdit, m_emailError, er.isValid, er.errorMessage);
+    setFieldValidation(m_birthdayEdit, m_birthdayError, br.isValid, br.errorMessage);
 
-    const bool allValid = nameResult.isValid
-                       && mobileResult.isValid
-                       && emailResult.isValid
-                       && bdayResult.isValid;
-
-    m_okButton->setEnabled(allValid);
+    m_okButton->setEnabled(nr.isValid && mr.isValid && er.isValid && br.isValid);
 }
 
 void ContactDialog::setFieldValidation(QWidget *field, QLabel *label,
                                        bool valid, const QString &error)
 {
     if (valid) {
-        field->setStyleSheet(QString());
+        field->setStyleSheet("");
         label->clear();
         label->hide();
     } else {
-        field->setStyleSheet(
-            QStringLiteral("border: 1px solid #e74c3c; border-radius: 4px;"));
+        field->setStyleSheet("border: 1px solid #e74c3c; border-radius: 4px;");
         label->setText(error);
         label->show();
     }

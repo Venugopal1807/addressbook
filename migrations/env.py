@@ -1,10 +1,4 @@
-"""
-Alembic environment configuration for Addressbook.
-
-Configures Alembic to use the SQLAlchemy models defined in
-schema/models.py as the target metadata for auto-generating
-migration scripts.
-"""
+"""Alembic environment configuration."""
 
 import os
 import sys
@@ -13,34 +7,19 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Add the project root to path so we can import schema.models
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# add schema dir to path so we can import models
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'schema'))
+from models import Base
 
-from schema.models import Base
-
-# Alembic Config object
 config = context.config
-
-# Setup logging from alembic.ini
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Target metadata for autogenerate support
 target_metadata = Base.metadata
 
-# Allow overriding the database URL via environment variable
-db_url = os.environ.get("ADDRESSBOOK_DB_URL")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
 
-
-def run_migrations_offline() -> None:
-    """
-    Run migrations in 'offline' mode.
-
-    Generates SQL scripts without connecting to the database.
-    Useful for review before applying changes.
-    """
+def run_migrations_offline():
+    """Run migrations without a live DB connection (generates SQL)."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -48,29 +27,19 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """
-    Run migrations in 'online' mode.
-
-    Connects to the database and applies migrations directly.
-    """
+def run_migrations_online():
+    """Run migrations against a live database."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
-
+        context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
 

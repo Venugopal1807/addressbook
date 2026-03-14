@@ -1,16 +1,14 @@
+#!/usr/bin/env python3
 """
-Schema management CLI tool for the Addressbook database.
-
-Wraps Alembic commands for convenient schema migration management.
-Use this script to initialize, create, and apply database migrations.
+CLI wrapper around Alembic for managing database schema migrations.
 
 Usage:
-    python manage_schema.py init       Initialize a new database
-    python manage_schema.py migrate    Auto-generate a new migration
-    python manage_schema.py upgrade    Apply all pending migrations
-    python manage_schema.py downgrade  Rollback the last migration
-    python manage_schema.py current    Show current migration revision
-    python manage_schema.py history    Show migration history
+    python manage_schema.py init       - create db and apply all migrations
+    python manage_schema.py migrate    - auto-generate new migration from model changes
+    python manage_schema.py upgrade    - apply pending migrations
+    python manage_schema.py downgrade  - rollback last migration
+    python manage_schema.py current    - show current revision
+    python manage_schema.py history    - list all migrations
 """
 
 import os
@@ -20,92 +18,89 @@ import argparse
 from alembic.config import Config
 from alembic import command
 
-
-def get_alembic_config() -> Config:
-    """
-    Returns a configured Alembic Config object.
-
-    Points to the alembic.ini in the migrations/ directory and ensures
-    the database URL points to the correct SQLite file.
-    """
-    migrations_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "migrations"
-    )
-    config_path = os.path.join(migrations_dir, "alembic.ini")
-
-    if not os.path.exists(config_path):
-        print(f"Error: alembic.ini not found at {config_path}")
-        sys.exit(1)
-
-    config = Config(config_path)
-    config.set_main_option("script_location", migrations_dir)
-    return config
+# paths relative to this script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+ALEMBIC_INI = os.path.join(PROJECT_DIR, "migrations", "alembic.ini")
 
 
-def cmd_init(config: Config) -> None:
-    """Initialize the database with the current schema."""
-    command.upgrade(config, "head")
-    print("Database initialized successfully.")
+def get_alembic_config():
+    cfg = Config(ALEMBIC_INI)
+    cfg.set_main_option("script_location", os.path.join(PROJECT_DIR, "migrations"))
+    return cfg
 
 
-def cmd_migrate(config: Config, message: str = "auto migration") -> None:
-    """Auto-generate a new migration based on model changes."""
-    command.revision(config, autogenerate=True, message=message)
-    print(f"Migration created: {message}")
+def cmd_init(args):
+    """Create the database and run all migrations."""
+    cfg = get_alembic_config()
+    command.upgrade(cfg, "head")
+    print("Database initialized.")
 
 
-def cmd_upgrade(config: Config) -> None:
-    """Apply all pending migrations."""
-    command.upgrade(config, "head")
-    print("Database upgraded to latest revision.")
+def cmd_migrate(args):
+    """Generate a new migration from model changes."""
+    cfg = get_alembic_config()
+    msg = args.message or "auto migration"
+    command.revision(cfg, autogenerate=True, message=msg)
+    print(f"Migration created: {msg}")
 
 
-def cmd_downgrade(config: Config) -> None:
-    """Rollback the last migration."""
-    command.downgrade(config, "-1")
-    print("Database downgraded by one revision.")
+def cmd_upgrade(args):
+    """Apply pending migrations."""
+    cfg = get_alembic_config()
+    rev = args.revision or "head"
+    command.upgrade(cfg, rev)
+    print(f"Upgraded to: {rev}")
 
 
-def cmd_current(config: Config) -> None:
-    """Show the current migration revision."""
-    command.current(config, verbose=True)
+def cmd_downgrade(args):
+    """Rollback one migration."""
+    cfg = get_alembic_config()
+    rev = args.revision or "-1"
+    command.downgrade(cfg, rev)
+    print(f"Downgraded to: {rev}")
 
 
-def cmd_history(config: Config) -> None:
-    """Show migration revision history."""
-    command.history(config, verbose=True)
+def cmd_current(args):
+    cfg = get_alembic_config()
+    command.current(cfg, verbose=True)
 
 
-def main() -> None:
-    """Parse arguments and dispatch to the appropriate command."""
-    parser = argparse.ArgumentParser(
-        description="Addressbook database schema management tool."
-    )
-    parser.add_argument(
-        "command",
-        choices=["init", "migrate", "upgrade", "downgrade", "current", "history"],
-        help="Schema management command to execute.",
-    )
-    parser.add_argument(
-        "-m",
-        "--message",
-        default="auto migration",
-        help="Migration message (used with 'migrate' command).",
-    )
+def cmd_history(args):
+    cfg = get_alembic_config()
+    command.history(cfg, verbose=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Addressbook schema management")
+    sub = parser.add_subparsers(dest="command", help="available commands")
+    sub.required = True
+
+    sub.add_parser("init", help="Initialize database with current schema")
+
+    migrate_p = sub.add_parser("migrate", help="Auto-generate migration")
+    migrate_p.add_argument("-m", "--message", help="Migration description")
+
+    upgrade_p = sub.add_parser("upgrade", help="Apply migrations")
+    upgrade_p.add_argument("revision", nargs="?", default="head")
+
+    downgrade_p = sub.add_parser("downgrade", help="Rollback migration")
+    downgrade_p.add_argument("revision", nargs="?", default="-1")
+
+    sub.add_parser("current", help="Show current revision")
+    sub.add_parser("history", help="Show migration history")
 
     args = parser.parse_args()
-    config = get_alembic_config()
 
-    commands = {
-        "init": lambda: cmd_init(config),
-        "migrate": lambda: cmd_migrate(config, args.message),
-        "upgrade": lambda: cmd_upgrade(config),
-        "downgrade": lambda: cmd_downgrade(config),
-        "current": lambda: cmd_current(config),
-        "history": lambda: cmd_history(config),
+    handlers = {
+        "init": cmd_init,
+        "migrate": cmd_migrate,
+        "upgrade": cmd_upgrade,
+        "downgrade": cmd_downgrade,
+        "current": cmd_current,
+        "history": cmd_history,
     }
-
-    commands[args.command]()
+    handlers[args.command](args)
 
 
 if __name__ == "__main__":

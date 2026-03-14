@@ -1,8 +1,3 @@
-/**
- * @file contacttablemodel.cpp
- * @brief Implementation of the ContactTableModel for QTableView display.
- */
-
 #include "contacttablemodel.h"
 
 ContactTableModel::ContactTableModel(QObject *parent)
@@ -19,64 +14,50 @@ int ContactTableModel::rowCount(const QModelIndex &parent) const
 int ContactTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return ColumnCount;
+    return ColCount;
 }
 
 QVariant ContactTableModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || index.row() >= m_contacts.count()) {
-        return QVariant();
-    }
+    if (!index.isValid() || index.row() >= m_contacts.count())
+        return {};
 
-    const Contact &contact = m_contacts.at(index.row());
+    const Contact &c = m_contacts.at(index.row());
 
     if (role == Qt::DisplayRole) {
         switch (index.column()) {
-        case ColumnName:
-            return contact.name();
-        case ColumnMobile:
-            return contact.mobile();
-        case ColumnEmail:
-            return contact.email();
-        case ColumnBirthday:
-            return contact.birthday().toString(QStringLiteral("dd MMM yyyy"));
-        default:
-            return QVariant();
+        case ColName:     return c.name();
+        case ColMobile:   return c.mobile();
+        case ColEmail:    return c.email();
+        case ColBirthday: return c.birthday().toString("dd MMM yyyy");
         }
     }
 
-    if (role == Qt::TextAlignmentRole) {
-        switch (index.column()) {
-        case ColumnBirthday:
-            return QVariant(Qt::AlignCenter);
-        default:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        }
-    }
+    if (role == Qt::TextAlignmentRole && index.column() == ColBirthday)
+        return QVariant(Qt::AlignCenter);
 
-    // Store raw data for sorting by actual date
-    if (role == Qt::UserRole && index.column() == ColumnBirthday) {
-        return contact.birthday();
-    }
+    if (role == Qt::TextAlignmentRole)
+        return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
 
-    return QVariant();
+    // expose raw QDate for proper sorting via proxy model
+    if (role == Qt::UserRole && index.column() == ColBirthday)
+        return c.birthday();
+
+    return {};
 }
 
-QVariant ContactTableModel::headerData(int section,
-                                        Qt::Orientation orientation,
-                                        int role) const
+QVariant ContactTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (orientation != Qt::Horizontal || role != Qt::DisplayRole) {
-        return QVariant();
-    }
+    if (orientation != Qt::Horizontal || role != Qt::DisplayRole)
+        return {};
 
     switch (section) {
-    case ColumnName:     return QStringLiteral("Name");
-    case ColumnMobile:   return QStringLiteral("Mobile");
-    case ColumnEmail:    return QStringLiteral("Email");
-    case ColumnBirthday: return QStringLiteral("Birthday");
-    default: return QVariant();
+    case ColName:     return tr("Name");
+    case ColMobile:   return tr("Mobile");
+    case ColEmail:    return tr("Email");
+    case ColBirthday: return tr("Birthday");
     }
+    return {};
 }
 
 void ContactTableModel::setContacts(const QList<Contact> &contacts)
@@ -88,7 +69,7 @@ void ContactTableModel::setContacts(const QList<Contact> &contacts)
 
 void ContactTableModel::addContact(const Contact &contact)
 {
-    const int row = m_contacts.count();
+    int row = m_contacts.count();
     beginInsertRows(QModelIndex(), row, row);
     m_contacts.append(contact);
     endInsertRows();
@@ -96,20 +77,16 @@ void ContactTableModel::addContact(const Contact &contact)
 
 void ContactTableModel::updateContact(int row, const Contact &contact)
 {
-    if (row < 0 || row >= m_contacts.count()) {
+    if (row < 0 || row >= m_contacts.count())
         return;
-    }
-
     m_contacts[row] = contact;
-    emit dataChanged(index(row, 0), index(row, ColumnCount - 1));
+    emit dataChanged(index(row, 0), index(row, ColCount - 1));
 }
 
 void ContactTableModel::removeContact(int row)
 {
-    if (row < 0 || row >= m_contacts.count()) {
+    if (row < 0 || row >= m_contacts.count())
         return;
-    }
-
     beginRemoveRows(QModelIndex(), row, row);
     m_contacts.removeAt(row);
     endRemoveRows();
@@ -117,8 +94,7 @@ void ContactTableModel::removeContact(int row)
 
 Contact ContactTableModel::contactAt(int row) const
 {
-    if (row < 0 || row >= m_contacts.count()) {
+    if (row < 0 || row >= m_contacts.count())
         return Contact();
-    }
     return m_contacts.at(row);
 }

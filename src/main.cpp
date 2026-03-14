@@ -1,261 +1,139 @@
-/**
- * @file main.cpp
- * @brief Application entry point for the Addressbook application.
- *
- * Initializes the QApplication, applies the custom stylesheet for a modern
- * look and feel, and launches the main window.
- */
-
 #include <QApplication>
-#include <QFont>
-
 #include "widgets/mainwindow.h"
 
-/**
- * @brief Returns the application-wide stylesheet (QSS).
- *
- * Defines a modern, clean visual theme with:
- * - Light gray background with white cards
- * - Blue accent color for primary actions
- * - Alternating row colors in the table
- * - Styled scrollbars, buttons, and input fields
- */
-static QString applicationStyleSheet()
+int main(int argc, char *argv[])
 {
-    return QStringLiteral(R"(
-        /* ---- Global ---- */
+    QApplication app(argc, argv);
+    app.setApplicationName("Addressbook");
+    app.setOrganizationName("Addressbook");
+
+    // global stylesheet for a cleaner look
+    app.setStyleSheet(R"(
         QMainWindow {
-            background-color: #f5f6fa;
+            background: #f5f6fa;
         }
 
-        /* ---- Menu Bar ---- */
-        QMenuBar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 2px 8px;
-            font-size: 13px;
-        }
-        QMenuBar::item:selected {
-            background-color: #e3f2fd;
-            border-radius: 4px;
-        }
-        QMenu {
-            background-color: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 4px;
-        }
-        QMenu::item {
-            padding: 6px 28px 6px 12px;
-            border-radius: 4px;
-        }
-        QMenu::item:selected {
-            background-color: #e3f2fd;
-            color: #1565c0;
-        }
-
-        /* ---- Toolbar ---- */
-        QToolBar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 4px 8px;
-            spacing: 6px;
-        }
-        QToolBar QToolButton {
-            background-color: transparent;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            padding: 6px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #333333;
-        }
-        QToolBar QToolButton:hover {
-            background-color: #e3f2fd;
-            border-color: #90caf9;
-            color: #1565c0;
-        }
-        QToolBar QToolButton:pressed {
-            background-color: #bbdefb;
-        }
-
-        /* ---- Search Bar ---- */
-        QLineEdit#searchBar {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-size: 14px;
-            background-color: #ffffff;
-            selection-background-color: #90caf9;
-        }
-        QLineEdit#searchBar:focus {
-            border-color: #42a5f5;
-        }
-
-        /* ---- Table View ---- */
         QTableView {
-            background-color: #ffffff;
-            alternate-background-color: #f8f9fc;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            gridline-color: transparent;
-            selection-background-color: #e3f2fd;
-            selection-color: #1565c0;
+            background: white;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            gridline-color: #ecf0f1;
+            selection-background-color: #3498db;
+            selection-color: white;
             font-size: 13px;
-            outline: none;
         }
         QTableView::item {
-            padding: 4px 12px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 6px 8px;
         }
-        QTableView::item:selected {
-            background-color: #e3f2fd;
-            color: #1565c0;
+        QTableView::item:alternate {
+            background: #f8f9fa;
         }
+
         QHeaderView::section {
-            background-color: #fafbfd;
-            color: #666666;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            border: none;
-            border-bottom: 2px solid #e0e0e0;
+            background-color: #2c3e50;
+            color: white;
             padding: 8px 12px;
+            border: none;
+            font-weight: bold;
+            font-size: 13px;
         }
 
-        /* ---- Scrollbar ---- */
-        QScrollBar:vertical {
-            background: transparent;
-            width: 8px;
-            margin: 0;
-        }
-        QScrollBar::handle:vertical {
-            background: #c0c0c0;
-            min-height: 30px;
+        QLineEdit, QDateEdit {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
             border-radius: 4px;
+            background: white;
+            font-size: 13px;
         }
-        QScrollBar::handle:vertical:hover {
-            background: #a0a0a0;
-        }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-            height: 0;
-        }
-
-        /* ---- Status Bar ---- */
-        QStatusBar {
-            background-color: #ffffff;
-            border-top: 1px solid #e0e0e0;
-            font-size: 12px;
-            color: #888888;
-            padding: 4px 12px;
+        QLineEdit:focus, QDateEdit:focus {
+            border-color: #3498db;
         }
 
-        /* ---- Contact Dialog ---- */
-        QDialog {
-            background-color: #f5f6fa;
+        QPushButton {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            background: #3498db;
+            color: white;
         }
+        QPushButton:hover {
+            background: #2980b9;
+        }
+        QPushButton:pressed {
+            background: #2471a3;
+        }
+        QPushButton:disabled {
+            background: #bdc3c7;
+            color: #7f8c8d;
+        }
+        QPushButton#cancelButton {
+            background: #95a5a6;
+        }
+        QPushButton#cancelButton:hover {
+            background: #7f8c8d;
+        }
+
         QGroupBox {
-            font-weight: 600;
-            font-size: 14px;
-            color: #333333;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-top: 12px;
-            padding-top: 20px;
-            background-color: #ffffff;
+            font-weight: bold;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            margin-top: 8px;
+            padding-top: 16px;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
-            subcontrol-position: top left;
-            padding: 4px 12px;
-            color: #1565c0;
+            left: 12px;
+            padding: 0 6px;
         }
-        QLineEdit, QDateEdit {
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 13px;
-            background-color: #ffffff;
-            selection-background-color: #90caf9;
-        }
-        QLineEdit:focus, QDateEdit:focus {
-            border-color: #42a5f5;
-        }
+
         QLabel#errorLabel {
             color: #e74c3c;
             font-size: 11px;
             padding-left: 4px;
         }
 
-        /* ---- Buttons ---- */
-        QPushButton#saveButton {
-            background-color: #1976d2;
-            color: #ffffff;
+        QToolBar {
+            background: #2c3e50;
+            spacing: 4px;
+            padding: 4px;
             border: none;
-            border-radius: 6px;
-            padding: 10px 28px;
-            font-size: 14px;
-            font-weight: 600;
         }
-        QPushButton#saveButton:hover {
-            background-color: #1565c0;
+        QToolBar QToolButton {
+            color: white;
+            padding: 6px 12px;
+            border-radius: 3px;
         }
-        QPushButton#saveButton:pressed {
-            background-color: #0d47a1;
-        }
-        QPushButton#saveButton:disabled {
-            background-color: #b0bec5;
-            color: #eceff1;
-        }
-        QPushButton#cancelButton {
-            background-color: transparent;
-            color: #666666;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 10px 28px;
-            font-size: 14px;
-        }
-        QPushButton#cancelButton:hover {
-            background-color: #f5f5f5;
-            border-color: #bdbdbd;
+        QToolBar QToolButton:hover {
+            background: #34495e;
         }
 
-        /* ---- Message Box ---- */
-        QMessageBox {
-            background-color: #ffffff;
+        QMenuBar {
+            background: #2c3e50;
+            color: white;
         }
-        QMessageBox QPushButton {
-            padding: 6px 20px;
-            border-radius: 4px;
-            font-size: 13px;
+        QMenuBar::item:selected {
+            background: #34495e;
+        }
+        QMenu {
+            background: white;
+            border: 1px solid #dcdde1;
+        }
+        QMenu::item:selected {
+            background: #3498db;
+            color: white;
+        }
+
+        QStatusBar {
+            background: #ecf0f1;
+            color: #2c3e50;
+            font-size: 12px;
         }
     )");
-}
 
-/**
- * @brief Application entry point.
- */
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
-
-    // Application metadata
-    QApplication::setApplicationName(QStringLiteral("Addressbook"));
-    QApplication::setApplicationVersion(QStringLiteral("1.0.0"));
-    QApplication::setOrganizationName(QStringLiteral("Addressbook"));
-
-    // Set a clean, modern font
-    QFont appFont(QStringLiteral("Segoe UI"));
-    appFont.setPointSize(10);
-    appFont.setStyleStrategy(QFont::PreferAntialias);
-    app.setFont(appFont);
-
-    // Apply stylesheet
-    app.setStyleSheet(applicationStyleSheet());
-
-    // Launch main window
-    MainWindow window;
-    window.show();
+    MainWindow w;
+    w.show();
 
     return app.exec();
 }

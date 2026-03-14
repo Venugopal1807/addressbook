@@ -1,43 +1,30 @@
 """
-SQLAlchemy ORM model for the Addressbook database schema.
+SQLAlchemy model for the contacts table.
 
-This module defines the contacts table using SQLAlchemy's declarative
-mapping. It mirrors the schema used by the Qt/C++ application and serves
-as the single source of truth for database migrations managed by Alembic.
-
-Usage:
-    Used by Alembic for auto-generating and applying schema migrations.
-    The C++ application uses QSqlDatabase for runtime access.
+This mirrors the schema used by the C++ app's DatabaseManager.
+Used by Alembic for generating migration scripts.
 """
 
-from sqlalchemy import Column, Integer, String, Date, create_engine
+from sqlalchemy import Column, Integer, String, Date, CheckConstraint
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
 
 class Contact(Base):
-    """
-    Represents a contact in the addressbook.
-
-    Attributes:
-        id: Auto-incrementing primary key.
-        name: Full name of the contact (required, max 100 chars).
-        mobile: Mobile phone number (required, max 20 chars).
-        email: Email address (required, max 254 chars).
-        birthday: Date of birth (required, stored as ISO 8601 date).
-    """
-
     __tablename__ = "contacts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     mobile = Column(String(20), nullable=False)
     email = Column(String(254), nullable=False)
-    birthday = Column(Date, nullable=False)
+    birthday = Column(String(10), nullable=False)  # stored as ISO date string, same as C++ side
 
-    def __repr__(self) -> str:
-        return (
-            f"<Contact(id={self.id}, name='{self.name}', "
-            f"email='{self.email}')>"
-        )
+    # basic sanity constraints
+    __table_args__ = (
+        CheckConstraint("length(name) >= 2", name="ck_name_min_length"),
+        CheckConstraint("length(email) >= 5", name="ck_email_min_length"),
+    )
+
+    def __repr__(self):
+        return f"<Contact(id={self.id}, name='{self.name}', email='{self.email}')>"

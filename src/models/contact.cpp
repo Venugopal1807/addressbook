@@ -1,17 +1,8 @@
-/**
- * @file contact.cpp
- * @brief Implementation of the Contact data model.
- */
-
 #include "contact.h"
 #include "../validators/fieldvalidator.h"
 
 Contact::Contact()
     : m_id(-1)
-    , m_name()
-    , m_mobile()
-    , m_email()
-    , m_birthday()
 {
 }
 
@@ -25,15 +16,11 @@ Contact::Contact(int id, const QString &name, const QString &mobile,
 {
 }
 
-// --- Getters ---
-
 int Contact::id() const { return m_id; }
 QString Contact::name() const { return m_name; }
 QString Contact::mobile() const { return m_mobile; }
 QString Contact::email() const { return m_email; }
 QDate Contact::birthday() const { return m_birthday; }
-
-// --- Setters ---
 
 void Contact::setId(int id) { m_id = id; }
 void Contact::setName(const QString &name) { m_name = name; }

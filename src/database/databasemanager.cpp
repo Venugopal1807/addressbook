@@ -1,8 +1,3 @@
-/**
- * @file databasemanager.cpp
- * @brief Implementation of SQLite database operations for contacts.
- */
-
 #include "databasemanager.h"
 
 #include <QSqlError>
@@ -17,177 +12,147 @@ DatabaseManager::DatabaseManager()
 
 DatabaseManager::~DatabaseManager()
 {
-    if (m_database.isOpen()) {
+    if (m_database.isOpen())
         m_database.close();
-    }
     QSqlDatabase::removeDatabase(m_connectionName);
 }
 
 bool DatabaseManager::init(const QString &dbPath)
 {
-    m_database = QSqlDatabase::addDatabase(
-        QStringLiteral("QSQLITE"), m_connectionName);
+    m_database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
     m_database.setDatabaseName(dbPath);
 
     if (!m_database.open()) {
-        qWarning() << "DatabaseManager: Failed to open database:"
-                    << m_database.lastError().text();
+        qWarning() << "Failed to open database:" << m_database.lastError().text();
         return false;
     }
 
-    // Enable WAL mode for better concurrent access
-    QSqlQuery walQuery(m_database);
-    walQuery.exec(QStringLiteral("PRAGMA journal_mode=WAL"));
-
-    // Enable foreign keys
-    QSqlQuery fkQuery(m_database);
-    fkQuery.exec(QStringLiteral("PRAGMA foreign_keys=ON"));
+    // WAL mode gives better performance for concurrent reads
+    QSqlQuery(QStringLiteral("PRAGMA journal_mode=WAL"), m_database);
+    QSqlQuery(QStringLiteral("PRAGMA foreign_keys=ON"), m_database);
 
     return createTable();
 }
 
 bool DatabaseManager::createTable()
 {
-    QSqlQuery query(m_database);
-    const QString sql = QStringLiteral(
+    QSqlQuery q(m_database);
+    bool ok = q.exec(QStringLiteral(
         "CREATE TABLE IF NOT EXISTS contacts ("
         "    id       INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "    name     TEXT    NOT NULL,"
-        "    mobile   TEXT    NOT NULL,"
-        "    email    TEXT    NOT NULL,"
-        "    birthday TEXT    NOT NULL"
-        ")");
+        "    name     TEXT NOT NULL,"
+        "    mobile   TEXT NOT NULL,"
+        "    email    TEXT NOT NULL,"
+        "    birthday TEXT NOT NULL"
+        ")"));
 
-    if (!query.exec(sql)) {
-        qWarning() << "DatabaseManager: Failed to create table:"
-                    << query.lastError().text();
-        return false;
-    }
-
-    return true;
+    if (!ok)
+        qWarning() << "Failed to create contacts table:" << q.lastError().text();
+    return ok;
 }
 
 int DatabaseManager::addContact(const Contact &contact)
 {
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
+    QSqlQuery q(m_database);
+    q.prepare(QStringLiteral(
         "INSERT INTO contacts (name, mobile, email, birthday) "
         "VALUES (:name, :mobile, :email, :birthday)"));
+    q.bindValue(QStringLiteral(":name"), contact.name());
+    q.bindValue(QStringLiteral(":mobile"), contact.mobile());
+    q.bindValue(QStringLiteral(":email"), contact.email());
+    q.bindValue(QStringLiteral(":birthday"), contact.birthday().toString(Qt::ISODate));
 
-    query.bindValue(QStringLiteral(":name"), contact.name());
-    query.bindValue(QStringLiteral(":mobile"), contact.mobile());
-    query.bindValue(QStringLiteral(":email"), contact.email());
-    query.bindValue(QStringLiteral(":birthday"),
-                    contact.birthday().toString(Qt::ISODate));
-
-    if (!query.exec()) {
-        qWarning() << "DatabaseManager: Failed to add contact:"
-                    << query.lastError().text();
+    if (!q.exec()) {
+        qWarning() << "addContact failed:" << q.lastError().text();
         return -1;
     }
-
-    return query.lastInsertId().toInt();
+    return q.lastInsertId().toInt();
 }
 
 bool DatabaseManager::updateContact(const Contact &contact)
 {
     if (contact.id() < 0) {
-        qWarning() << "DatabaseManager: Cannot update contact with invalid id.";
+        qWarning() << "Can't update contact with invalid id";
         return false;
     }
 
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
-        "UPDATE contacts SET "
-        "    name     = :name,"
-        "    mobile   = :mobile,"
-        "    email    = :email,"
-        "    birthday = :birthday "
-        "WHERE id = :id"));
+    QSqlQuery q(m_database);
+    q.prepare(QStringLiteral(
+        "UPDATE contacts SET name=:name, mobile=:mobile, "
+        "email=:email, birthday=:birthday WHERE id=:id"));
+    q.bindValue(QStringLiteral(":name"), contact.name());
+    q.bindValue(QStringLiteral(":mobile"), contact.mobile());
+    q.bindValue(QStringLiteral(":email"), contact.email());
+    q.bindValue(QStringLiteral(":birthday"), contact.birthday().toString(Qt::ISODate));
+    q.bindValue(QStringLiteral(":id"), contact.id());
 
-    query.bindValue(QStringLiteral(":name"), contact.name());
-    query.bindValue(QStringLiteral(":mobile"), contact.mobile());
-    query.bindValue(QStringLiteral(":email"), contact.email());
-    query.bindValue(QStringLiteral(":birthday"),
-                    contact.birthday().toString(Qt::ISODate));
-    query.bindValue(QStringLiteral(":id"), contact.id());
-
-    if (!query.exec()) {
-        qWarning() << "DatabaseManager: Failed to update contact:"
-                    << query.lastError().text();
+    if (!q.exec()) {
+        qWarning() << "updateContact failed:" << q.lastError().text();
         return false;
     }
-
-    return query.numRowsAffected() > 0;
+    return q.numRowsAffected() > 0;
 }
 
 bool DatabaseManager::deleteContact(int id)
 {
     if (id < 0) {
-        qWarning() << "DatabaseManager: Cannot delete contact with invalid id.";
+        qWarning() << "Can't delete contact with invalid id";
         return false;
     }
 
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral("DELETE FROM contacts WHERE id = :id"));
-    query.bindValue(QStringLiteral(":id"), id);
+    QSqlQuery q(m_database);
+    q.prepare(QStringLiteral("DELETE FROM contacts WHERE id = :id"));
+    q.bindValue(QStringLiteral(":id"), id);
 
-    if (!query.exec()) {
-        qWarning() << "DatabaseManager: Failed to delete contact:"
-                    << query.lastError().text();
+    if (!q.exec()) {
+        qWarning() << "deleteContact failed:" << q.lastError().text();
         return false;
     }
-
-    return query.numRowsAffected() > 0;
+    return q.numRowsAffected() > 0;
 }
 
 QList<Contact> DatabaseManager::getAllContacts() const
 {
-    QList<Contact> contacts;
+    QList<Contact> results;
+    QSqlQuery q(m_database);
+    q.prepare(QStringLiteral(
+        "SELECT id, name, mobile, email, birthday FROM contacts "
+        "ORDER BY name COLLATE NOCASE ASC"));
 
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
-        "SELECT id, name, mobile, email, birthday "
-        "FROM contacts ORDER BY name COLLATE NOCASE ASC"));
-
-    if (!query.exec()) {
-        qWarning() << "DatabaseManager: Failed to retrieve contacts:"
-                    << query.lastError().text();
-        return contacts;
+    if (!q.exec()) {
+        qWarning() << "getAllContacts failed:" << q.lastError().text();
+        return results;
     }
 
-    while (query.next()) {
-        Contact contact(
-            query.value(0).toInt(),
-            query.value(1).toString(),
-            query.value(2).toString(),
-            query.value(3).toString(),
-            QDate::fromString(query.value(4).toString(), Qt::ISODate));
-        contacts.append(contact);
+    while (q.next()) {
+        results.append(Contact(
+            q.value(0).toInt(),
+            q.value(1).toString(),
+            q.value(2).toString(),
+            q.value(3).toString(),
+            QDate::fromString(q.value(4).toString(), Qt::ISODate)));
     }
-
-    return contacts;
+    return results;
 }
 
 Contact DatabaseManager::getContactById(int id) const
 {
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
-        "SELECT id, name, mobile, email, birthday "
-        "FROM contacts WHERE id = :id"));
-    query.bindValue(QStringLiteral(":id"), id);
+    QSqlQuery q(m_database);
+    q.prepare(QStringLiteral(
+        "SELECT id, name, mobile, email, birthday FROM contacts WHERE id = :id"));
+    q.bindValue(QStringLiteral(":id"), id);
 
-    if (!query.exec() || !query.next()) {
-        qWarning() << "DatabaseManager: Contact not found with id:" << id;
+    if (!q.exec() || !q.next()) {
+        qWarning() << "Contact not found:" << id;
         return Contact();
     }
 
     return Contact(
-        query.value(0).toInt(),
-        query.value(1).toString(),
-        query.value(2).toString(),
-        query.value(3).toString(),
-        QDate::fromString(query.value(4).toString(), Qt::ISODate));
+        q.value(0).toInt(),
+        q.value(1).toString(),
+        q.value(2).toString(),
+        q.value(3).toString(),
+        QDate::fromString(q.value(4).toString(), Qt::ISODate));
 }
 
 bool DatabaseManager::isOpen() const
